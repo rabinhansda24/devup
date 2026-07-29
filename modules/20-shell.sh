@@ -246,26 +246,52 @@ esac
 DIRENV
     fi
 
-    # --- starship (prompt last, so nothing overwrites it) ---
+    # --- starship (only if no other framework already owns the prompt) ---
     if command -v starship >/dev/null 2>&1; then
       cat <<'STARSHIP'
 # ---- starship ----
-case "$_devup_shell" in
-  zsh)  eval "$(starship init zsh)" ;;
-  bash) eval "$(starship init bash)" ;;
-esac
+# This file is sourced at the *end* of the rc file, so any prompt framework the
+# user already had has run by now. Claiming the prompt unconditionally here
+# silently replaces it — devup provisions a machine, it does not get to pick
+# your prompt. So only take over when nothing else has.
+#   oh-my-zsh  -> ZSH_THEME    oh-my-bash -> OSH_THEME
+# Override either way: DEVUP_FORCE_STARSHIP=1, or clear ZSH_THEME to hand over.
+_devup_prompt_owned=""
+[ -n "${ZSH_THEME:-}" ] && _devup_prompt_owned="oh-my-zsh"
+[ -n "${OSH_THEME:-}" ] && _devup_prompt_owned="oh-my-bash"
+if [ -z "$_devup_prompt_owned" ] || [ -n "${DEVUP_FORCE_STARSHIP:-}" ]; then
+  case "$_devup_shell" in
+    zsh)  eval "$(starship init zsh)" ;;
+    bash) eval "$(starship init bash)" ;;
+  esac
+fi
+unset _devup_prompt_owned
 
 STARSHIP
     fi
 
-    # --- atuin (after starship: it rebinds Ctrl-R and the up arrow) ---
-    if command -v atuin >/dev/null 2>&1; then
+    # --- atuin (must come after fzf: both want Ctrl-R, last one wins) ---
+    # The installer puts atuin in ~/.atuin/bin, which is only on PATH once the
+    # user's rc has sourced ~/.atuin/bin/env. Testing `command -v atuin` alone
+    # therefore misses an installed atuin, this block gets omitted, and fzf keeps
+    # Ctrl-R — silently replacing the user's history search.
+    if command -v atuin >/dev/null 2>&1 || [ -x "$HOME/.atuin/bin/atuin" ]; then
       cat <<'ATUIN'
 # ---- atuin ----
-case "$_devup_shell" in
-  zsh)  eval "$(atuin init zsh --disable-up-arrow)" ;;
-  bash) eval "$(atuin init bash --disable-up-arrow)" ;;
-esac
+# Put ~/.atuin/bin on PATH first: this file may be sourced before the atuin
+# installer's own env snippet runs.
+if [ -d "$HOME/.atuin/bin" ]; then
+  case ":$PATH:" in
+    *":$HOME/.atuin/bin:"*) ;;
+    *) export PATH="$HOME/.atuin/bin:$PATH" ;;
+  esac
+fi
+if command -v atuin >/dev/null 2>&1; then
+  case "$_devup_shell" in
+    zsh)  eval "$(atuin init zsh --disable-up-arrow)" ;;
+    bash) eval "$(atuin init bash --disable-up-arrow)" ;;
+  esac
+fi
 
 ATUIN
     fi
@@ -306,7 +332,8 @@ alias dps='docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"'
 
 alias ..='cd ..'
 alias ...='cd ../..'
-alias mkdir='mkdir -p'
+# No `alias mkdir='mkdir -p'`: same rule as cat/du above — silently changing a
+# standard command's behaviour is how a script that works here fails elsewhere.
 
 # Which process is on a port? — the lookup everyone needs weekly.
 port() { lsof -i ":$1" 2>/dev/null || ss -ltnp 2>/dev/null | grep ":$1"; }

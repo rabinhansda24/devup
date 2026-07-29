@@ -1,6 +1,6 @@
 -- ~/.wezterm.lua — installed by devup.
--- Delete the "devup" comment above if you want to take ownership of this file
--- (devup will then stop overwriting it).
+-- devup:wezterm — delete this marker line to take ownership of this file
+-- (devup will then leave it alone instead of updating it).
 
 local wezterm = require 'wezterm'
 local act = wezterm.action
@@ -18,10 +18,20 @@ config.font_size = 11.5
 config.line_height = 1.1
 
 config.window_padding = { left = 8, right = 8, top = 8, bottom = 0 }
-config.window_decorations = 'RESIZE'
-config.hide_tab_bar_if_only_one_tab = true
-config.use_fancy_tab_bar = false
-config.tab_bar_at_bottom = true
+
+-- Keep the window's own title bar, so minimise / maximise / close are there.
+-- 'RESIZE' alone gives a borderless window you cannot close with the mouse.
+config.window_decorations = 'TITLE | RESIZE'
+
+-- Always show the tab bar. Hiding it on a single tab means a new user never
+-- discovers tabs exist. The *fancy* bar is the one that draws a × on each tab
+-- and a + to add one — the retro bar has neither, which is why the tab controls
+-- appeared to be missing. Fancy always renders at the top, so no bottom option.
+config.hide_tab_bar_if_only_one_tab = false
+config.use_fancy_tab_bar = true
+config.tab_bar_at_bottom = false
+config.tab_max_width = 32
+
 config.scrollback_lines = 20000
 config.audible_bell = 'Disabled'
 
@@ -41,7 +51,17 @@ config.webgpu_power_preference = 'LowPower'  -- laptop battery
 config.max_fps = 60
 
 --------------------------------------------------------------------------------
--- Keys: leader is Ctrl-A, tmux-style.
+-- Keys: leader is Ctrl-Shift-A, tmux-style.
+--
+-- Not Ctrl-A: that is readline's beginning-of-line, and making it the leader
+-- taxes every single use of it with the leader timeout. A terminal cannot encode
+-- Ctrl-Shift-<letter>, so binding it costs the shell nothing.
+--
+-- Tabs also work with the WezTerm defaults, which are left untouched:
+--   Ctrl-Shift-T       new tab
+--   Ctrl-Shift-W       close tab
+--   Ctrl-Tab           next tab
+-- ...or just click the + and × on the tab bar.
 --
 --   LEADER -           split horizontally (side by side)
 --   LEADER |           split vertically (stacked)
@@ -54,9 +74,8 @@ config.max_fps = 60
 --   LEADER 1-9         jump to tab N
 --   LEADER f           fuzzy-search the scrollback
 --   LEADER [           copy mode (vim keys, then y to yank)
---   LEADER Ctrl-A      send a literal Ctrl-A through to the shell
 --------------------------------------------------------------------------------
-config.leader = { key = 'a', mods = 'CTRL', timeout_milliseconds = 1000 }
+config.leader = { key = 'a', mods = 'CTRL|SHIFT', timeout_milliseconds = 1000 }
 
 config.keys = {
   -- Splits
@@ -87,9 +106,6 @@ config.keys = {
   -- Search and copy mode
   { key = 'f', mods = 'LEADER', action = act.Search { CaseInSensitiveString = '' } },
   { key = '[', mods = 'LEADER', action = act.ActivateCopyMode },
-
-  -- Send a literal Ctrl-A (needed for readline's "start of line")
-  { key = 'a', mods = 'LEADER|CTRL', action = act.SendKey { key = 'a', mods = 'CTRL' } },
 
   -- Font size
   { key = '=', mods = 'CTRL', action = act.IncreaseFontSize },

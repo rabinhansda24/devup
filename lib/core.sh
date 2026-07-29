@@ -62,7 +62,9 @@ run() {
 }
 
 # ---------- sudo ----------
+# shellcheck disable=SC2034  # SUDO is consumed by lib/install.sh and modules
 SUDO=""
+# shellcheck disable=SC2034  # SUDO is consumed by lib/install.sh and modules
 setup_sudo() {
   if [[ "$(id -u)" == "0" ]]; then
     SUDO=""
@@ -172,7 +174,8 @@ backup_file() {
     printf '%s\n' "${C_DIM}  [dry-run] backup ${f}${C_RESET}"
     return 0
   fi
-  local bak="${f}.devup-bak.$(date +%Y%m%d%H%M%S)"
+  local bak
+  bak="${f}.devup-bak.$(date +%Y%m%d%H%M%S)"
   cp -a "$f" "$bak"
   info "Backed up $(basename "$f") → $(basename "$bak")"
 }
