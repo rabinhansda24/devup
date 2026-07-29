@@ -1,0 +1,6 @@
+*.devup-bak.*
+*.log
+.DS_Store
+docs/screenshot.png
+.code-review-graph/
+.claude/settings.local.json

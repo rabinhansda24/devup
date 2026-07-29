@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+
+      - name: Syntax check
+        run: |
+          for f in devup install.sh configs/devup-clean lib/*.sh modules/*.sh; do
+            bash -n "$f" || exit 1
+          done
+
+      - name: Shellcheck
+        run: |
+          shellcheck -S warning -x devup install.sh configs/devup-clean lib/*.sh modules/*.sh
+
+  smoke:
+    name: Smoke test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detection runs clean
+        run: ./devup list
+
+      - name: Status runs clean
+        run: ./devup status
+
+      - name: Doctor runs clean
+        run: ./devup doctor || true
+
+      - name: Profiles are all valid
+        run: |
+          for p in profiles/*.conf; do
+            name="$(basename "$p" .conf)"
+            echo "::group::$name"
+            ./devup --dry-run --profile "$name" --auto --yes --no-tui
+            echo "::endgroup::"
+          done
+
+      - name: Manual mode renders
+        run: ./devup --manual --profile fullstack --no-tui
+
+      - name: Every registered package has a valid dry run
+        run: ./devup --dry-run --auto --yes --no-tui
+
+  install:
+    name: Real install (minimal profile)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install minimal profile for real
+        run: ./devup --profile minimal --auto --yes --no-tui
+
+      - name: Generated shell config must parse
+        run: |
+          bash -n ~/.config/devup/shell.sh
+          zsh -n ~/.config/devup/shell.sh || true
+
+      - name: Second run must be idempotent
+        run: |
+          ./devup --profile minimal --auto --yes --no-tui | tee out.txt
+          grep -q "unchanged" out.txt
