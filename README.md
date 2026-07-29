@@ -6,7 +6,7 @@ Built for Go + Rust + Python + TypeScript work on a laptop with a modest CPU and
 a disk that fills up faster than you expect.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR-USERNAME/devup/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/rabinhansda24/devup/main/install.sh | bash
 ```
 
 Then just:

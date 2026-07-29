@@ -2,14 +2,14 @@
 #
 # devup bootstrap.
 #
-#   curl -fsSL https://raw.githubusercontent.com/YOUR-USERNAME/devup/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/rabinhansda24/devup/main/install.sh | bash
 #
 # Clones (or updates) devup into ~/.local/share/devup, symlinks the CLI into
 # ~/.local/bin, and then hands over to it.
 
 set -euo pipefail
 
-REPO="${DEVUP_REPO:-https://github.com/YOUR-USERNAME/devup.git}"
+REPO="${DEVUP_REPO:-https://github.com/rabinhansda24/devup.git}"
 BRANCH="${DEVUP_BRANCH:-main}"
 DEST="${DEVUP_DEST:-$HOME/.local/share/devup}"
 BIN="$HOME/.local/bin"
