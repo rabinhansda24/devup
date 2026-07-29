@@ -148,8 +148,10 @@ write_block() {
   if grep -qF "$begin" "$file" 2>/dev/null; then
     # Replace existing block.
     local tmp="${TMP_DIR:-/tmp}/block.$$"
-    awk -v b="$begin" -v e="$end" -v c="$content" '
-      index($0, b) == 1 { print b; print c; print e; skip=1; next }
+    # Content goes through ENVIRON, not -v: awk -v interprets backslash
+    # escapes and would corrupt any content containing a literal backslash.
+    DEVUP_BLOCK_CONTENT="$content" awk -v b="$begin" -v e="$end" '
+      index($0, b) == 1 { print b; print ENVIRON["DEVUP_BLOCK_CONTENT"]; print e; skip=1; next }
       index($0, e) == 1 { skip=0; next }
       skip != 1 { print }
     ' "$file" >"$tmp"

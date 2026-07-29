@@ -2,7 +2,7 @@
 #
 # devup — one command to set up an Ubuntu machine for polyglot development.
 #
-#   https://github.com/YOUR-USERNAME/devup
+#   https://github.com/rabinhansda24/devup
 #
 # Idempotent: detects what is already installed and only does the missing work.
 
@@ -347,7 +347,13 @@ run_selection() {
   fi
 
   # ---- sudo only if we actually have work ----
-  if (( ${#todo[@]} > 0 )); then
+  # --config runs even on already-installed packages, and some configs write
+  # to /etc, so a config step alone is enough to need sudo.
+  local has_config=0
+  for id in "${sel[@]}"; do
+    [[ -n "${PKG_CONFIG[$id]}" ]] && { has_config=1; break; }
+  done
+  if (( ${#todo[@]} > 0 || has_config )); then
     setup_sudo
   fi
 
