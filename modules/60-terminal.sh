@@ -72,15 +72,22 @@ _configure_wezterm() {
     return 0
   fi
 
+  # The header of configs/wezterm.lua tells the user that deleting the marker
+  # takes ownership of the file. Honour that literally: marker present means the
+  # file is ours and gets refreshed; marker absent means hands off. The old test
+  # was `grep -q devup`, which was inverted (no marker -> clobber) *and* matched
+  # any incidental mention of the word anywhere in the file.
   if [[ -f "$cfg" ]]; then
-    if grep -q "devup" "$cfg" 2>/dev/null; then
-      debug "wezterm config already managed by devup"
+    if ! grep -q "devup:wezterm" "$cfg" 2>/dev/null; then
+      # shellcheck disable=SC2088  # literal ~/ is intentional in the message
+      debug "~/.wezterm.lua is user-owned (no devup:wezterm marker); leaving it alone"
       return 0
     fi
+    cmp -s "$src" "$cfg" && { debug "wezterm config unchanged"; return 0; }
     backup_file "$cfg"
   fi
   cp "$src" "$cfg"
-  success "Installed ~/.wezterm.lua (leader = Ctrl-A, see comments for keys)"
+  success "Installed ~/.wezterm.lua (leader = Ctrl-Shift-A, see comments for keys)"
 }
 
 register_pkg \
