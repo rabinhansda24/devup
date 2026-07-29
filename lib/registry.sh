@@ -4,6 +4,7 @@
 # Contributors: you almost certainly want to edit a file in modules/ instead
 # of this one. See CONTRIBUTING.md.
 
+# shellcheck disable=SC2034  # registry arrays are consumed by devup and lib/*.sh
 declare -a GROUP_IDS=()
 declare -A GROUP_TITLE=()
 declare -A GROUP_DESC=()

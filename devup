@@ -175,6 +175,7 @@ cmd_doctor() {
   }
 
   # PATH
+  # shellcheck disable=SC2088  # literal ~/ is intentional in user-facing messages
   case ":$PATH:" in
     *":$HOME/.local/bin:"*) _check 0 "~/.local/bin is on PATH" "" ;;
     *) _check 1 "~/.local/bin is NOT on PATH" "Open a new shell, or: source ~/.config/devup/shell.sh" ;;
@@ -562,12 +563,13 @@ count_installed() {
 }
 
 cmd_clean() {
+  local flags=()
+  ((DRY_RUN)) && flags+=('--dry-run')
+  ((ASSUME_YES)) && flags+=('--yes')
   if [[ -x "$HOME/.local/bin/devup-clean" ]]; then
-    "$HOME/.local/bin/devup-clean" $( ((DRY_RUN)) && printf '%s' '--dry-run' ) \
-      $( ((ASSUME_YES)) && printf '%s' '--yes' )
+    "$HOME/.local/bin/devup-clean" "${flags[@]}"
   elif [[ -x "$DEVUP_ROOT/configs/devup-clean" ]]; then
-    bash "$DEVUP_ROOT/configs/devup-clean" $( ((DRY_RUN)) && printf '%s' '--dry-run' ) \
-      $( ((ASSUME_YES)) && printf '%s' '--yes' )
+    bash "$DEVUP_ROOT/configs/devup-clean" "${flags[@]}"
   else
     die "Cleanup script not found. Run: devup install devup-clean"
   fi
