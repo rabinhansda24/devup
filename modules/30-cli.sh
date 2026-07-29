@@ -119,7 +119,7 @@ register_pkg \
   --desc "Git TUI — stage hunks and rebase faster than any GUI" \
   --group cli \
   --check "command -v lazygit" \
-  --install "install_gh_tarball jesseduffield/lazygit \"Linux_\${GNU_ARCH}\\.tar\\.gz\$\" lazygit" \
+  --install "install_gh_tarball jesseduffield/lazygit \"[Ll]inux_\${GNU_ARCH}\\.tar\\.gz\$\" lazygit" \
   --manual "Download from https://github.com/jesseduffield/lazygit/releases" \
   --default yes
 

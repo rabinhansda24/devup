@@ -38,9 +38,9 @@ register_pkg \
   --name "atuin" \
   --desc "Fuzzy searchable shell history — the single biggest QoL win" \
   --group shell \
-  --check "command -v atuin" \
-  --install "install_script https://setup.atuin.sh" \
-  --manual "curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh" \
+  --check "command -v atuin || test -x \$HOME/.atuin/bin/atuin" \
+  --install "install_gh_tarball atuinsh/atuin \"/atuin-\${GNU_ARCH}-unknown-linux-musl\\.tar\\.gz\$\" atuin" \
+  --manual "Download from https://github.com/atuinsh/atuin/releases" \
   --note "atuin stores history locally by default. Run 'atuin register' only if you want sync." \
   --default yes
 

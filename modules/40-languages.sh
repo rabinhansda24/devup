@@ -76,7 +76,9 @@ register_pkg \
   --default yes
 
 _install_rust() {
-  install_script https://sh.rustup.rs -y --no-modify-path --component clippy rustfmt rust-analyzer || return 1
+  # rustup-init wants a comma-separated component list (space-separated values
+  # are parsed as positional args and abort the install)
+  install_script https://sh.rustup.rs -y --no-modify-path --component clippy,rustfmt,rust-analyzer || return 1
   if [[ "${DRY_RUN:-0}" != "1" && -f "$HOME/.cargo/env" ]]; then
     # shellcheck disable=SC1091
     . "$HOME/.cargo/env"
