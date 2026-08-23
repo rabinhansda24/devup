@@ -158,6 +158,28 @@ editor snaps have their own. Everything here uses apt repos or vendor `.deb`s.
 - `sudo` access
 - git (the bootstrap installs it if missing)
 
+## Help make devup cross-platform
+
+devup works on Ubuntu today. The goal is bigger: **one dependable command to
+bootstrap a development machine on any major developer OS**.
+
+Contributions for additional platforms are welcome, especially:
+
+- Fedora / RHEL-family Linux
+- Arch Linux
+- macOS
+- Windows / WSL-aware setup
+
+Cross-platform support should not become a pile of `if OS == ...` branches.
+The preferred direction is to keep package definitions and profiles reusable,
+while moving OS-specific installation, detection and configuration behind
+platform adapters.
+
+If you use another OS and want devup there, open an issue or PR. Even a tested
+design proposal, package mapping, or proof-of-concept adapter is useful.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution rules.
+
 ## Safety
 
 - Nothing runs without showing you the plan first, unless you pass `--yes`.
