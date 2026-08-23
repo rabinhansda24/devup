@@ -47,18 +47,22 @@ register_pkg \
   --check "command -v wezterm" \
   --install "_install_wezterm" \
   --config "_configure_wezterm" \
-  --manual "See https://wezterm.org/installation.html — use the .deb, not the snap" \
+  --manual "Add WezTerm's official apt.fury.io/wez repository, then: sudo apt install wezterm" \
   --needs "nerd-font" \
   --default yes
 
 _install_wezterm() {
-  # Prefer the .deb matching this Ubuntu release, then any Ubuntu .deb.
-  local esc="${OS_VERSION//./\\.}"
-  install_gh_deb wez/wezterm "Ubuntu${esc}\\.deb\$" && return 0
-  warn "No .deb for Ubuntu ${OS_VERSION}; trying the newest available Ubuntu build"
-  install_gh_deb wez/wezterm "Ubuntu[0-9.]+\\.deb\$" && return 0
-  error "Could not install WezTerm automatically. See https://wezterm.org/installation.html"
-  return 1
+  # WezTerm's stable GitHub release assets lag newer Ubuntu versions. Use the
+  # project's official APT repository instead so installation is distro-version
+  # independent and future updates arrive through normal apt upgrades.
+  install_apt ca-certificates curl gnupg || return 1
+
+  run "$SUDO install -m 0755 -d /usr/share/keyrings" || return 1
+  run "curl -fsSL https://apt.fury.io/wez/gpg.key | $SUDO gpg --yes --dearmor -o /usr/share/keyrings/wezterm-fury.gpg" || return 1
+  run "$SUDO chmod 0644 /usr/share/keyrings/wezterm-fury.gpg" || return 1
+  add_apt_repo wezterm \
+    "deb [signed-by=/usr/share/keyrings/wezterm-fury.gpg] https://apt.fury.io/wez/ * *" || return 1
+  install_apt wezterm
 }
 
 _configure_wezterm() {
