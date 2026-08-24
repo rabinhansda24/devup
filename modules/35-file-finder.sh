@@ -29,7 +29,10 @@ _install_file_finder() {
 # Interactive file finder installed by devup.
 # Usage: ff [PATH]
 
-set -uo pipefail
+# Do not enable pipefail here. When a selection is accepted, fzf exits while fd
+# may still be producing results; fd then receives SIGPIPE. With pipefail that
+# normal condition makes the pipeline look like a failure and Nano never opens.
+set -u
 
 root="${1:-.}"
 
