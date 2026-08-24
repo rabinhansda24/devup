@@ -1,26 +1,25 @@
 #!/usr/bin/env bash
-# 35-file-finder.sh — interactive fuzzy file search with preview and Nano.
+# 35-file-finder.sh — interactive fuzzy file search with preview and editor.
 
 register_pkg \
   --id file-finder \
   --name "file finder" \
-  --desc "Ctrl-F / ff — fuzzy file search with preview; opens in Nano" \
+  --desc "Ctrl-F / ff — fuzzy file search with preview; opens in Nano, falling back to vi" \
   --group cli \
   --check "test -x \$HOME/.local/bin/ff" \
   --install "_install_file_finder" \
   --config "_configure_file_finder" \
-  --manual "Install fd, fzf, bat and nano, copy configs/ff to ~/.local/bin/ff, then bind Ctrl-F in your shell" \
+  --manual "Install fd, fzf and bat, copy configs/ff to ~/.local/bin/ff, then bind Ctrl-F in your shell" \
   --note "Press Ctrl-F to find files from the current directory, or run 'ff PATH' to search elsewhere." \
   --needs "fd fzf bat" \
   --default yes
 
 _install_file_finder() {
   if [[ "${DRY_RUN:-0}" == "1" ]]; then
-    printf '%s\n' "${C_DIM}  [dry-run] install nano + ~/.local/bin/ff${C_RESET}"
+    printf '%s\n' "${C_DIM}  [dry-run] install ~/.local/bin/ff${C_RESET}"
     return 0
   fi
 
-  command -v nano >/dev/null 2>&1 || install_apt nano || return 1
   ensure_local_bin
 
   local target="$HOME/.local/bin/ff"
@@ -31,7 +30,7 @@ _install_file_finder() {
 
 # Do not enable pipefail here. When a selection is accepted, fzf exits while fd
 # may still be producing results; fd then receives SIGPIPE. With pipefail that
-# normal condition makes the pipeline look like a failure and Nano never opens.
+# normal condition makes the pipeline look like a failure and the editor never opens.
 set -u
 
 root="${1:-.}"
@@ -49,6 +48,15 @@ command -v fzf >/dev/null 2>&1 || {
   printf 'ff: fzf is required\n' >&2
   exit 127
 }
+
+if command -v nano >/dev/null 2>&1; then
+  editor_cmd="nano"
+elif command -v vi >/dev/null 2>&1; then
+  editor_cmd="vi"
+else
+  printf 'ff: neither nano nor vi is available\n' >&2
+  exit 1
+fi
 
 if command -v bat >/dev/null 2>&1; then
   preview="bat --color=always --style=numbers --line-range=:500 -- {}"
@@ -75,11 +83,11 @@ selected="$({
   --preview-window='right:60%:wrap')" || exit 0
 
 [[ -n "$selected" ]] || exit 0
-exec nano -- "$selected"
+exec "$editor_cmd" -- "$selected"
 FF
 
   chmod 0755 "$target"
-  success "Installed $target (fuzzy search + preview + Nano)"
+  success "Installed $target (fuzzy search + preview + editor)"
 }
 
 _configure_file_finder() {
