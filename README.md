@@ -41,6 +41,7 @@ devup list                         # every package + install state
 devup doctor                       # diagnose common problems
 
 devup --profile fullstack --auto   # unattended full setup
+devup --profile gnome-desktop --auto # optional GNOME desktop setup
 devup --dry-run -p fullstack       # preview it, change nothing
 devup --manual -p minimal          # print instructions instead
 
@@ -59,6 +60,7 @@ devup clean                        # reclaim disk from build caches
 | `minimal` | Build tools, git, and a usable shell. Nothing else. |
 | `terminal-transition` | Tools for moving GUI habits into the terminal, gradually. |
 | `rust-heavy` | Rust with compile-time and disk optimisations maxed out. |
+| `gnome-desktop` | Optional GNOME desktop customization and quality-of-life extensions. |
 
 Profiles are plain text files in `profiles/`. Copy one and edit it.
 
@@ -114,6 +116,43 @@ which you need or prompt glyphs render as boxes.
 </details>
 
 <details>
+<summary><b>GNOME desktop</b> — optional profile</summary>
+
+The `gnome-desktop` profile is deliberately separate from `fullstack`. It adds
+[Extension Manager](https://github.com/mjakeman/extension-manager),
+[`gnome-extensions-cli`](https://github.com/essembeh/gnome-extensions-cli), and
+these GNOME Shell extensions:
+
+- [Just Perfection](https://extensions.gnome.org/extension/3843/just-perfection/)
+- [User Themes](https://extensions.gnome.org/extension/19/user-themes/)
+- [Wallpaper Slideshow](https://extensions.gnome.org/extension/6281/wallpaper-slideshow/)
+- ChromaLeon / User Accent Colors
+- [Dash to Dock](https://extensions.gnome.org/extension/307/dash-to-dock/)
+- [Blur my Shell](https://extensions.gnome.org/extension/3193/blur-my-shell/)
+- [Top Bar Organizer](https://extensions.gnome.org/extension/4356/top-bar-organizer/)
+- Customize Clock on Lock Screen
+- [GSConnect](https://extensions.gnome.org/extension/1319/gsconnect/)
+- [Tiling Shell](https://extensions.gnome.org/extension/7065/tiling-shell/)
+- [Search Light](https://extensions.gnome.org/extension/5489/search-light/)
+
+Install it with:
+
+```bash
+devup --profile gnome-desktop --auto
+```
+
+Extension versions are selected for the current GNOME Shell release. Devup does
+not force incompatible or rejected extension builds. If an extension has no
+active compatible release, that package is reported as failed rather than
+patching its metadata. Selecting upstream Dash to Dock also disables Ubuntu
+Dock when the current session allows it, avoiding two competing docks.
+
+On Wayland, a logout/login may be required before newly installed extensions
+are available in the running GNOME Shell session. GSConnect should not be used
+alongside the KDE Connect desktop application.
+</details>
+
+<details>
 <summary><b>Backups &amp; maintenance</b></summary>
 
 Timeshift (system snapshots), restic (encrypted `$HOME` backups), smartmontools
@@ -157,6 +196,8 @@ editor snaps have their own. Everything here uses apt repos or vendor `.deb`s.
 - x86_64 or aarch64
 - `sudo` access
 - git (the bootstrap installs it if missing)
+
+The optional `gnome-desktop` profile requires a GNOME Shell desktop session.
 
 ## Help make devup cross-platform
 
