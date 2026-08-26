@@ -23,6 +23,7 @@ truncation_length = 3
 truncate_to_repo = true
 style = "bold cyan"
 read_only = " ro"
+format = "[󰉋 $path]($style) "
 
 [character]
 success_symbol = "[❯](bold green)"
@@ -30,7 +31,7 @@ error_symbol = "[❯](bold red)"
 vimcmd_symbol = "[❮](bold yellow)"
 
 [git_branch]
-symbol = " "
+symbol = " "
 style = "bold purple"
 format = "[$symbol$branch]($style) "
 
@@ -50,26 +51,26 @@ deleted = "✘${count}"
 
 [cmd_duration]
 min_time = 2_000
-format = "[took $duration]($style) "
+format = "[ $duration]($style) "
 style = "yellow"
 
 [golang]
-symbol = " "
+symbol = " "
 format = "[$symbol($version)]($style) "
 style = "bold cyan"
 
 [rust]
-symbol = " "
+symbol = " "
 format = "[$symbol($version)]($style) "
 style = "bold red"
 
 [python]
-symbol = " "
+symbol = " "
 format = '[${symbol}(${version})(\($virtualenv\))]($style) '
 style = "bold yellow"
 
 [nodejs]
-symbol = " "
+symbol = " "
 format = "[$symbol($version)]($style) "
 style = "bold green"
 # Don't announce Node in every directory that happens to contain a .js file.
@@ -77,7 +78,7 @@ detect_files = ["package.json", ".node-version"]
 detect_folders = ["node_modules"]
 
 [docker_context]
-symbol = " "
+symbol = " "
 format = "[$symbol$context]($style) "
 style = "blue"
 only_with_files = true
