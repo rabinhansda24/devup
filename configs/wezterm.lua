@@ -74,6 +74,8 @@ config.max_fps = 60
 --   LEADER 1-9         jump to tab N
 --   LEADER f           fuzzy-search the scrollback
 --   LEADER [           copy mode (vim keys, then y to yank)
+--
+--   Ctrl-Shift-F       devup's file finder, over all of $HOME
 --------------------------------------------------------------------------------
 config.leader = { key = 'a', mods = 'CTRL|SHIFT', timeout_milliseconds = 1000 }
 
@@ -105,6 +107,20 @@ config.keys = {
 
   -- Search and copy mode
   { key = 'f', mods = 'LEADER', action = act.Search { CaseInSensitiveString = '' } },
+
+  -- Ctrl-Shift-F runs devup's global file finder (Alt-Shift-F does the same
+  -- thing, and needs no help from the terminal).
+  --
+  -- The shell cannot see this key on its own: a terminal sends the same 0x06
+  -- for Ctrl-Shift-F as for Ctrl-F, because control characters carry no shift
+  -- bit. So send the sequence a terminal implementing the kitty keyboard
+  -- protocol would send for it — CSI 102 ; 6 u, 102 being 'f' and 6 being
+  -- ctrl+shift — and let the shell bind that. Terminals that speak the
+  -- protocol natively send it themselves, so one shell binding covers both.
+  --
+  -- This replaces WezTerm's built-in Ctrl-Shift-F. Nothing is lost: LEADER f
+  -- above is the same scrollback search.
+  { key = 'f', mods = 'CTRL|SHIFT', action = act.SendString '\x1b[102;6u' },
   { key = '[', mods = 'LEADER', action = act.ActivateCopyMode },
 
   -- Font size

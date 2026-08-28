@@ -102,6 +102,10 @@ Ctrl-F              search the current directory
 ff                  the same thing, typed
 ff PATH             search PATH instead
 ff "path with spaces"
+
+Ctrl-Shift-F        search everything under $HOME
+Alt-Shift-F         the same, in terminals that cannot send Ctrl-Shift-F
+ff --global         the same thing, typed  (ff -g works too)
 ```
 
 Type to filter, arrows to move, **Enter** opens the highlighted file in nano
@@ -112,6 +116,13 @@ moves below the list on terminals narrower than 100 columns.
 Hidden files are included. `.git` is not, and neither is anything your
 `.gitignore` already excludes — which is also why it stays fast in a repo with
 a `node_modules` in it.
+
+The global search is for when you know the file exists but not where — without
+having to `cd` first. It skips package caches, toolchains, browser profiles and
+editor extensions, which is the difference between 450k results and 8k on a
+normal machine. `DEVUP_FF_GLOBAL_ROOT` changes the root; `~/.config/fd/ignore`
+is fd's own file for adding your own rules. The prompt reads `global` and the
+header names the root, so you always know which one you are in.
 </details>
 
 <details>
@@ -214,7 +225,19 @@ yours. Aliases here are shortcuts for things you already know how to type.
 you are is faster, and it keeps a stray Ctrl-F from listing the contents of your
 home directory to whoever is looking at the screen. Symlinks are not followed
 for the same reason: one link is otherwise enough to turn a search of a project
-into a walk through `/`. Pass a path when you want to look somewhere else.
+into a walk through `/`. Alt-Shift-F is there when you do want the whole of
+`$HOME`, and says so on screen.
+
+**The global search answers to two keys.** A terminal sends the same `0x06` for
+Ctrl-F and Ctrl-Shift-F — control characters have no shift bit — so Ctrl-Shift-F
+only arrives if the terminal encodes it, which means the kitty keyboard protocol
+(`CSI 102;6u`). kitty, ghostty and foot do that natively, and devup's WezTerm
+config maps the key to send it; WezTerm's own Ctrl-Shift-F is replaced, but
+`LEADER f` was already the same scrollback search, so nothing is lost. Somewhere
+that cannot manage any of that, Alt-Shift-F does the same job: it is `ESC F`
+everywhere with no configuration, and displaces only a duplicate of Alt-f, which
+still works. Both keys run the same finder, so it does not matter which one your
+terminal gives you.
 
 **Generated files carry a marker.** `~/.local/bin/ff` starts with a
 `devup-managed:` line, and devup compares it against the copy in `configs/`
