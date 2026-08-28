@@ -170,7 +170,7 @@ install_managed_file() {
   if [[ -e "$dest" ]]; then
     verb="Updated"
     if ! grep -q 'devup-managed:' "$dest" 2>/dev/null; then
-      warn "$dest was not written by devup — saving a copy before replacing it"
+      warn "$dest does not carry devup's marker — saving a copy before replacing it"
       backup_file "$dest"
     fi
   fi
