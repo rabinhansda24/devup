@@ -74,8 +74,17 @@ add_apt_key url keyring-name                # armoured key → /etc/apt/keyrings
 add_apt_key_raw url keyring-name            # already-binary keyring
 add_apt_repo name "deb [...] ... main"      # sources.list.d entry + update
 symlink_bin fdfind fd                       # for Ubuntu's renamed binaries
+install_managed_file configs/x ~/bin/x      # a file devup owns, refreshed on change
 cargo_install crate
 ```
+
+`install_managed_file` is for files devup generates into the user's home. It
+writes only when the shipped copy and the installed one differ, so updates reach
+existing machines and repeat runs stay quiet. Give the file in `configs/` a
+`# devup-managed: <id>` line near the top: a copy without it was written by
+someone else and gets backed up rather than overwritten. Pair it with a `--check`
+that compares the two files, not one that only tests for existence — otherwise a
+machine keeps the version it first installed for ever.
 
 Architecture is available as `$DEB_ARCH` (amd64/arm64), `$GNU_ARCH`
 (x86_64/aarch64), and `$OS_CODENAME` / `$OS_VERSION` for the Ubuntu release.
