@@ -14,13 +14,13 @@ jobs:
 
       - name: Syntax check
         run: |
-          for f in devup install.sh configs/devup-clean lib/*.sh modules/*.sh; do
+          for f in devup install.sh configs/devup-clean configs/ff lib/*.sh modules/*.sh; do
             bash -n "$f" || exit 1
           done
 
       - name: Shellcheck
         run: |
-          shellcheck -S warning -x devup install.sh configs/devup-clean lib/*.sh modules/*.sh
+          shellcheck -S warning -x devup install.sh configs/devup-clean configs/ff lib/*.sh modules/*.sh
 
   smoke:
     name: Smoke test (${{ matrix.os }})

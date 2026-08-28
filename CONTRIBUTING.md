@@ -139,7 +139,7 @@ There is no install-level test harness (it would need throwaway VMs), so:
 
 ```bash
 # 1. Syntax
-for f in devup install.sh configs/devup-clean lib/*.sh modules/*.sh; do
+for f in devup install.sh configs/devup-clean configs/ff lib/*.sh modules/*.sh; do
   bash -n "$f" || echo "FAIL: $f"
 done
 shellcheck -S warning devup lib/*.sh modules/*.sh   # if you have it

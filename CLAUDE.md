@@ -20,7 +20,7 @@ lib/install.sh     install primitives (install_apt, install_gh_deb, install_scri
 lib/ui.sh          whiptail menus with a plain-numbered-text fallback
 modules/[1-7]0-*.sh  package declarations, sourced in lexical order
 profiles/*.conf    named package-id lists (fullstack, minimal, terminal-transition, rust-heavy)
-configs/           templates copied to the user's home (devup-clean, starship.toml, wezterm.lua)
+configs/           files copied to the user's home (ff, devup-clean, starship.toml, wezterm.lua)
 ```
 
 ## Architecture
@@ -86,8 +86,8 @@ checks to run locally:
 
 ```bash
 # syntax + lint
-for f in devup install.sh configs/devup-clean lib/*.sh modules/*.sh; do bash -n "$f" || echo "FAIL: $f"; done
-shellcheck -S warning -x devup install.sh configs/devup-clean lib/*.sh modules/*.sh
+for f in devup install.sh configs/devup-clean configs/ff lib/*.sh modules/*.sh; do bash -n "$f" || echo "FAIL: $f"; done
+shellcheck -S warning -x devup install.sh configs/devup-clean configs/ff lib/*.sh modules/*.sh
 
 # detection, then a dry run of just your package
 ./devup list
