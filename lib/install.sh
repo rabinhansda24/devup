@@ -133,6 +133,52 @@ install_script() {
   fi
 }
 
+# install_managed_file <src> <dest> [mode]
+# Keeps a file devup generates into the user's home in step with the copy in
+# configs/. Existence alone is not enough to call such a file installed: an old
+# copy would keep every later improvement from ever reaching the machine, so the
+# contents decide.
+#
+# devup only claims a file that still carries the "devup-managed:" marker every
+# file in configs/ starts with. Anything else belongs to the user and is backed
+# up before it is replaced.
+install_managed_file() {
+  local src="$1" dest="$2" mode="${3:-0755}"
+
+  [[ -f "$src" ]] || { error "$(basename "$src") is missing from the devup checkout"; return 1; }
+
+  if [[ "${DRY_RUN:-0}" == "1" ]]; then
+    if cmp -s "$src" "$dest" 2>/dev/null; then
+      printf '%s\n' "${C_DIM}  [dry-run] ${dest} is already up to date${C_RESET}"
+    else
+      printf '%s\n' "${C_DIM}  [dry-run] install ${dest}${C_RESET}"
+    fi
+    return 0
+  fi
+
+  # Already byte-for-byte what we ship: leave it alone. Rewriting it would make
+  # every run report a change it did not make.
+  if cmp -s "$src" "$dest"; then
+    [[ -x "$dest" ]] || chmod "$mode" "$dest"
+    debug "$dest is already up to date"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$dest")"
+
+  local verb="Installed"
+  if [[ -e "$dest" ]]; then
+    verb="Updated"
+    if ! grep -q 'devup-managed:' "$dest" 2>/dev/null; then
+      warn "$dest was not written by devup — saving a copy before replacing it"
+      backup_file "$dest"
+    fi
+  fi
+
+  install -m "$mode" "$src" "$dest" || return 1
+  success "${verb} ${dest}"
+}
+
 # symlink_bin <target> <linkname> — for Ubuntu's renamed binaries (bat→batcat).
 symlink_bin() {
   local target="$1" name="$2"

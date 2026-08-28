@@ -6,29 +6,25 @@ register_pkg \
   --name "file finder" \
   --desc "Ctrl-F / ff — fuzzy file search with preview; opens in Nano, falling back to vi" \
   --group cli \
-  --check "test -x \$HOME/.local/bin/ff" \
+  --check "test -x \"\$HOME/.local/bin/ff\" && cmp -s \"\$DEVUP_ROOT/configs/ff\" \"\$HOME/.local/bin/ff\"" \
   --install "_install_file_finder" \
   --config "_configure_file_finder" \
-  --manual "Install fd, fzf and bat, copy configs/ff to ~/.local/bin/ff, then bind Ctrl-F in your shell" \
+  --manual "Install fd, fzf and bat, then: install -m 0755 configs/ff ~/.local/bin/ff, and bind Ctrl-F in your shell" \
   --note "Press Ctrl-F to find files from the current directory, or run 'ff PATH' to search elsewhere." \
   --needs "fd fzf bat" \
   --default yes
 
 _install_file_finder() {
-  if [[ "${DRY_RUN:-0}" == "1" ]]; then
-    printf '%s\n' "${C_DIM}  [dry-run] install ~/.local/bin/ff${C_RESET}"
-    return 0
-  fi
-
-  ensure_local_bin
-
-  local src="$DEVUP_ROOT/configs/ff"
-  [[ -f "$src" ]] || { warn "configs/ff missing"; return 1; }
-  install -m 0755 "$src" "$HOME/.local/bin/ff"
-  success "Installed $HOME/.local/bin/ff (fuzzy search + preview + editor)"
+  [[ "${DRY_RUN:-0}" == "1" ]] || ensure_local_bin
+  install_managed_file "$DEVUP_ROOT/configs/ff" "$HOME/.local/bin/ff"
 }
 
 _configure_file_finder() {
+  # The script is refreshed here as well as in --install, so that
+  # `devup config file-finder` repairs an out-of-date ff on its own. It is a
+  # no-op when the installed copy already matches the one we ship.
+  _install_file_finder || return 1
+
   if [[ "${DRY_RUN:-0}" == "1" ]]; then
     printf '%s\n' "${C_DIM}  [dry-run] bind Ctrl-F to ff in ~/.zshrc + ~/.bashrc${C_RESET}"
     return 0
