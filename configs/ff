@@ -1,60 +1,170 @@
 #!/usr/bin/env bash
-# Interactive file finder installed by devup.
-# Usage: ff [PATH]
+# devup-managed: file-finder
+#
+# Interactive fuzzy file finder: fd lists the files, fzf filters and previews
+# them, and the selection opens in nano (or vi). Installed by devup as
+# ~/.local/bin/ff and bound to Ctrl-F in zsh and bash.
+#
+#   ff              search the current directory
+#   ff PATH         search PATH instead
+#
+# Edit configs/ff in the devup repository rather than this copy: devup replaces
+# the installed file whenever it differs from the version it ships.
 
-# Do not enable pipefail here. When a selection is accepted, fzf exits while fd
-# may still be producing results; fd then receives SIGPIPE. With pipefail that
-# normal condition makes the pipeline look like a failure and the editor never opens.
+# pipefail stays off on purpose. fzf exits as soon as a selection is accepted,
+# which leaves fd writing into a closed pipe and taking a SIGPIPE. That is
+# normal, and with pipefail the whole pipeline would look like a failure and the
+# editor would never open. Success is decided by fzf's exit status alone.
 set -u
 
+die() { printf 'ff: %s\n' "$1" >&2; exit "${2:-2}"; }
+
+usage() {
+  cat <<'USAGE'
+Usage: ff [PATH]
+
+Fuzzy-find a file under PATH (the current directory by default) and open it.
+Hidden files are included; .git and anything your ignore files exclude are not.
+The search never leaves PATH.
+
+  type          filter the list
+  arrows        move through the matches
+  Enter         open the highlighted file in nano, or vi if nano is missing
+  Esc / Ctrl-C  leave without opening anything
+USAGE
+}
+
+# ---------- preview ----------
+# fzf runs this for whichever line is highlighted, so it has to succeed no
+# matter what it is pointed at: a failure here would leave a broken pane, and
+# for a directory or a binary there is nothing sensible to print anyway.
+preview() {
+  local file="$1"
+  # A name beginning with "-" would otherwise be read as an option by whatever
+  # we hand it to. Making it a path spares us relying on "--", which not every
+  # implementation of these tools supports.
+  [[ "$file" == -* ]] && file="./$file"
+
+  [[ -e "$file" ]] || { printf '(no such file)\n'; return 0; }
+  [[ -d "$file" ]] && { printf '(directory)\n'; return 0; }
+  [[ -r "$file" ]] || { printf '(not readable)\n'; return 0; }
+
+  # grep -I reports no match for a file it considers binary, and an empty file
+  # has no line to match either.
+  if ! LC_ALL=C grep -qI . "$file" 2>/dev/null; then
+    if [[ -s "$file" ]]; then printf '(binary file)\n'; else printf '(empty file)\n'; fi
+    return 0
+  fi
+
+  local bat=""
+  if command -v bat >/dev/null 2>&1; then bat="bat"
+  elif command -v batcat >/dev/null 2>&1; then bat="batcat"   # Ubuntu's name for it
+  fi
+
+  if [[ -n "$bat" ]]; then
+    "$bat" --color=always --style=numbers --paging=never --line-range=:500 "$file" 2>/dev/null && return 0
+  fi
+  head -n 500 "$file" 2>/dev/null
+  return 0
+}
+
+# ---------- arguments ----------
+if [[ "${1:-}" == "--preview" ]]; then
+  shift
+  (( $# == 1 )) || die "--preview takes exactly one file"
+  preview "$1"
+  exit 0
+fi
+
+case "${1:-}" in
+  -h|--help) usage; exit 0 ;;
+  --)        shift ;;
+  -?*)       die "unknown option '$1' (try: ff --help)" ;;
+esac
+
+(( $# <= 1 )) || die "expected at most one PATH, got $#"
 root="${1:-.}"
 
+[[ -e "$root" ]]              || die "no such path: $root"
+[[ -d "$root" ]]              || die "not a directory: $root"
+[[ -r "$root" && -x "$root" ]] || die "cannot search: $root"
+
+# ---------- the tools we stand on ----------
 if command -v fd >/dev/null 2>&1; then
   fd_cmd="fd"
 elif command -v fdfind >/dev/null 2>&1; then
-  fd_cmd="fdfind"
+  fd_cmd="fdfind"          # Ubuntu's name for it
 else
-  printf 'ff: fd is required\n' >&2
-  exit 127
+  die "fd is not installed — try: devup install fd" 127
 fi
 
-command -v fzf >/dev/null 2>&1 || {
-  printf 'ff: fzf is required\n' >&2
-  exit 127
-}
+command -v fzf >/dev/null 2>&1 || die "fzf is not installed — try: devup install fzf" 127
 
+# Settled before the picker opens, so nobody chooses a file only to be told
+# there is nothing to open it with.
 if command -v nano >/dev/null 2>&1; then
   editor_cmd="nano"
 elif command -v vi >/dev/null 2>&1; then
   editor_cmd="vi"
 else
-  printf 'ff: neither nano nor vi is available\n' >&2
-  exit 1
+  die "neither nano nor vi is available" 1
 fi
 
-if command -v bat >/dev/null 2>&1; then
-  preview="bat --color=always --style=numbers --line-range=:500 -- {}"
-elif command -v batcat >/dev/null 2>&1; then
-  preview="batcat --color=always --style=numbers --line-range=:500 -- {}"
+# ---------- layout ----------
+# A 55% preview pane is comfortable on a wide terminal and unreadable on a
+# narrow one, so ask the terminal how wide it is and put the preview below when
+# there is no room beside. stty is asked through /dev/tty because stdout here is
+# a command substitution, not the terminal.
+columns=""
+if size="$(stty size 2>/dev/null </dev/tty)"; then columns="${size##* }"; fi
+[[ "$columns" =~ ^[0-9]+$ ]] || columns="${COLUMNS:-80}"
+if (( columns < 100 )); then
+  preview_window='down:50%:wrap'
 else
-  preview="sed -n '1,500p' -- {}"
+  preview_window='right:55%:wrap'
 fi
 
-selected="$({
+# fzf runs the preview through a shell, so the path to this script is quoted
+# here. {} is left bare: fzf quotes the filename it substitutes.
+self="$0"
+[[ "$self" != /* ]] && self="$PWD/$self"
+
+# ---------- pick ----------
+# --follow is deliberately absent: following symlinks would let a search of the
+# current directory wander into $HOME or / through a single link, which is both
+# slow and a surprise.
+selected="$(
   "$fd_cmd" \
     --type f \
     --hidden \
-    --follow \
+    --color never \
     --exclude .git \
-    . "$root" 2>/dev/null
-} | fzf \
-  --height=90% \
-  --layout=reverse \
-  --border \
-  --info=inline \
-  --prompt='Files ❯ ' \
-  --preview "$preview" \
-  --preview-window='right:60%:wrap')" || exit 0
+    . "$root" 2>/dev/null \
+  | fzf \
+      --height=80% \
+      --min-height=10 \
+      --layout=reverse \
+      --border \
+      --info=inline \
+      --prompt='file ❯ ' \
+      --header="${root}  ·  Enter opens in ${editor_cmd}, Esc cancels" \
+      --preview="$(printf '%q' "$self") --preview {}" \
+      --preview-window="$preview_window"
+)"
+rc=$?
+
+case "$rc" in
+  0)     ;;                                    # something was chosen
+  1|130) exit 0 ;;                             # nothing matched, or cancelled
+  *)     die "fzf exited with status $rc" "$rc" ;;
+esac
 
 [[ -n "$selected" ]] || exit 0
-exec "$editor_cmd" -- "$selected"
+
+# An absolute path is unambiguous whatever the editor makes of a leading "-",
+# which is why no "--" separator is needed: busybox vi, for one, would open a
+# file literally called "--" instead of treating it as the end of the options.
+target="${selected#./}"
+[[ "$target" != /* ]] && target="$PWD/$target"
+
+exec "$editor_cmd" "$target"
