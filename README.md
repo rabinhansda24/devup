@@ -102,6 +102,9 @@ Ctrl-F              search the current directory
 ff                  the same thing, typed
 ff PATH             search PATH instead
 ff "path with spaces"
+
+Alt-Shift-F         search everything under $HOME
+ff --global         the same thing, typed  (ff -g works too)
 ```
 
 Type to filter, arrows to move, **Enter** opens the highlighted file in nano
@@ -112,6 +115,13 @@ moves below the list on terminals narrower than 100 columns.
 Hidden files are included. `.git` is not, and neither is anything your
 `.gitignore` already excludes — which is also why it stays fast in a repo with
 a `node_modules` in it.
+
+The global search is for when you know the file exists but not where — without
+having to `cd` first. It skips package caches, toolchains, browser profiles and
+editor extensions, which is the difference between 450k results and 8k on a
+normal machine. `DEVUP_FF_GLOBAL_ROOT` changes the root; `~/.config/fd/ignore`
+is fd's own file for adding your own rules. The prompt reads `global` and the
+header names the root, so you always know which one you are in.
 </details>
 
 <details>
@@ -214,7 +224,15 @@ yours. Aliases here are shortcuts for things you already know how to type.
 you are is faster, and it keeps a stray Ctrl-F from listing the contents of your
 home directory to whoever is looking at the screen. Symlinks are not followed
 for the same reason: one link is otherwise enough to turn a search of a project
-into a walk through `/`. Pass a path when you want to look somewhere else.
+into a walk through `/`. Alt-Shift-F is there when you do want the whole of
+`$HOME`, and says so on screen.
+
+**The global search is Alt-Shift-F, not Ctrl-Shift-F.** A terminal sends the
+same `0x06` for Ctrl-F and Ctrl-Shift-F — control characters have no shift bit —
+so the obvious key would need the kitty keyboard protocol or a per-terminal
+mapping, and WezTerm swallows Ctrl-Shift-F for its own scrollback search anyway.
+Alt-Shift-F arrives as `ESC F` everywhere with no configuration, and the only
+thing it displaces is a duplicate of Alt-f, which still works.
 
 **Generated files carry a marker.** `~/.local/bin/ff` starts with a
 `devup-managed:` line, and devup compares it against the copy in `configs/`
