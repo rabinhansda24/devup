@@ -34,14 +34,26 @@ _configure_file_finder() {
   zsh_block="$(cat <<'ZSH'
 # Ctrl-F normally means forward-char in Zsh/readline. devup intentionally
 # repurposes it as the familiar Find shortcut; Right Arrow still moves forward.
-if command -v ff >/dev/null 2>&1; then
+if [[ -o interactive ]]; then
   _devup_file_finder_widget() {
+    if ! command -v ff >/dev/null 2>&1; then
+      zle -M "ff is not on PATH — run: devup install file-finder"
+      return 1
+    fi
+    # zle -I hands the screen to the finder; reset-prompt draws the prompt again
+    # once it, and any editor it opened, has exited.
     zle -I
-    ff
+    ff < /dev/tty
     zle reset-prompt
   }
   zle -N _devup_file_finder_widget
-  bindkey '^F' _devup_file_finder_widget
+  # Bound in every keymap so Ctrl-F works the same whether the shell is in
+  # emacs or vi editing mode. Looking ff up inside the widget rather than out
+  # here keeps the binding working when ~/.local/bin joins PATH later in the
+  # rc file than this block runs.
+  bindkey -M emacs '^F' _devup_file_finder_widget
+  bindkey -M viins '^F' _devup_file_finder_widget
+  bindkey -M vicmd '^F' _devup_file_finder_widget
 fi
 ZSH
 )"
@@ -49,9 +61,22 @@ ZSH
   bash_block="$(cat <<'BASH'
 # Ctrl-F normally means forward-char in Bash/readline. devup intentionally
 # repurposes it as the familiar Find shortcut; Right Arrow still moves forward.
-if command -v ff >/dev/null 2>&1; then
-  _devup_file_finder_widget() { ff; }
-  bind -x '"\C-f":_devup_file_finder_widget'
+# bind only works in an interactive shell, and plenty of tooling sources
+# .bashrc from a non-interactive one, where it would otherwise warn.
+if [[ $- == *i* ]]; then
+  _devup_file_finder_widget() {
+    if command -v ff >/dev/null 2>&1; then
+      ff < /dev/tty
+    else
+      printf 'ff is not on PATH — run: devup install file-finder\n' >&2
+    fi
+  }
+  # Bound in every keymap so Ctrl-F works the same in emacs and vi editing
+  # mode. ff is looked up inside the function rather than out here, so the
+  # binding survives ~/.local/bin joining PATH later in the rc file.
+  bind -m emacs-standard -x '"\C-f": _devup_file_finder_widget'
+  bind -m vi-insert      -x '"\C-f": _devup_file_finder_widget'
+  bind -m vi-command     -x '"\C-f": _devup_file_finder_widget'
 fi
 BASH
 )"
