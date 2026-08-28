@@ -92,6 +92,29 @@ yazi, chezmoi.
 </details>
 
 <details>
+<summary><b>File finder</b> — Ctrl-F</summary>
+
+`ff` puts fd, fzf and bat together into the one thing a file manager was
+actually for: find a file, look at it, open it.
+
+```
+Ctrl-F              search the current directory
+ff                  the same thing, typed
+ff PATH             search PATH instead
+ff "path with spaces"
+```
+
+Type to filter, arrows to move, **Enter** opens the highlighted file in nano
+(or vi if nano is missing), **Esc** or **Ctrl-C** leaves without opening
+anything. The right-hand pane previews the file with syntax highlighting, and
+moves below the list on terminals narrower than 100 columns.
+
+Hidden files are included. `.git` is not, and neither is anything your
+`.gitignore` already excludes — which is also why it stays fast in a repo with
+a `node_modules` in it.
+</details>
+
+<details>
 <summary><b>Language toolchains</b></summary>
 
 [mise](https://mise.jdx.dev) manages Go, Node and Python versions with
@@ -187,6 +210,19 @@ win short of buying a different machine.
 standard commands is how you end up unable to work on a machine that isn't
 yours. Aliases here are shortcuts for things you already know how to type.
 
+**Ctrl-F searches the current directory, not `$HOME`.** Searching from wherever
+you are is faster, and it keeps a stray Ctrl-F from listing the contents of your
+home directory to whoever is looking at the screen. Symlinks are not followed
+for the same reason: one link is otherwise enough to turn a search of a project
+into a walk through `/`. Pass a path when you want to look somewhere else.
+
+**Generated files carry a marker.** `~/.local/bin/ff` starts with a
+`devup-managed:` line, and devup compares it against the copy in `configs/`
+rather than just checking that the file exists. Without that, a machine that
+installed `ff` once would keep the version it first got for ever. A file without
+the marker was written by someone else, so it gets backed up rather than
+replaced.
+
 **Snaps avoided.** Docker-as-snap has confinement problems with bind mounts;
 editor snaps have their own. Everything here uses apt repos or vendor `.deb`s.
 
@@ -239,8 +275,8 @@ package manager. To undo its *configuration*:
 
 ```bash
 rm -rf ~/.config/devup
-# then delete the "# >>> devup:shell >>>" block from ~/.zshrc and ~/.bashrc
-rm ~/.local/bin/devup ~/.local/bin/devup-clean
+# then delete the "# >>> devup:... >>>" blocks from ~/.zshrc and ~/.bashrc
+rm ~/.local/bin/devup ~/.local/bin/devup-clean ~/.local/bin/ff
 rm -rf ~/.local/share/devup
 ```
 

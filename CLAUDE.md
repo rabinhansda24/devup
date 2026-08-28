@@ -20,7 +20,7 @@ lib/install.sh     install primitives (install_apt, install_gh_deb, install_scri
 lib/ui.sh          whiptail menus with a plain-numbered-text fallback
 modules/[1-7]0-*.sh  package declarations, sourced in lexical order
 profiles/*.conf    named package-id lists (fullstack, minimal, terminal-transition, rust-heavy)
-configs/           templates copied to the user's home (devup-clean, starship.toml, wezterm.lua)
+configs/           files copied to the user's home (ff, devup-clean, starship.toml, wezterm.lua)
 ```
 
 ## Architecture
@@ -80,14 +80,18 @@ Log: `~/.local/state/devup/devup.log`. `-v/--verbose` streams command output ins
 
 ## Testing
 
-No install-level harness (it would need throwaway VMs). CI (`.github/workflows/ci.yml`) runs three
-jobs — lint, smoke on ubuntu-22.04/24.04, and a real `minimal` install — and these are the same
-checks to run locally:
+No install-level harness (it would need throwaway VMs). CI (`.github/workflows/ci.yml`) runs four
+jobs — lint, the `tests/` suite, smoke on ubuntu-22.04/24.04, and a real `minimal` install — and
+these are the same checks to run locally:
 
 ```bash
+# the file finder test suite (sandboxed: never touches your own $HOME)
+tests/run.sh
+tests/run.sh search      # just the files whose name matches
+
 # syntax + lint
-for f in devup install.sh configs/devup-clean lib/*.sh modules/*.sh; do bash -n "$f" || echo "FAIL: $f"; done
-shellcheck -S warning -x devup install.sh configs/devup-clean lib/*.sh modules/*.sh
+for f in devup install.sh configs/devup-clean configs/ff lib/*.sh modules/*.sh; do bash -n "$f" || echo "FAIL: $f"; done
+shellcheck -S warning -x devup install.sh configs/devup-clean configs/ff lib/*.sh modules/*.sh tests/*.sh
 
 # detection, then a dry run of just your package
 ./devup list

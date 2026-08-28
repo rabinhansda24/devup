@@ -54,7 +54,7 @@ else
   git clone --depth 1 --branch "$BRANCH" --quiet "$REPO" "$DEST"
 fi
 
-chmod +x "$DEST/devup" "$DEST/configs/devup-clean" 2>/dev/null || true
+chmod +x "$DEST/devup" "$DEST/configs/devup-clean" "$DEST/configs/ff" 2>/dev/null || true
 
 # --- link the CLI ---
 mkdir -p "$BIN"
