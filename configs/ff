@@ -7,6 +7,7 @@
 #
 #   ff              search the current directory
 #   ff PATH         search PATH instead
+#   ff --global     search everything under $HOME
 #
 # Edit configs/ff in the devup repository rather than this copy: devup replaces
 # the installed file whenever it differs from the version it ships.
@@ -22,15 +23,22 @@ die() { printf 'ff: %s\n' "$1" >&2; exit "${2:-2}"; }
 usage() {
   cat <<'USAGE'
 Usage: ff [PATH]
+       ff --global
 
 Fuzzy-find a file under PATH (the current directory by default) and open it.
 Hidden files are included; .git and anything your ignore files exclude are not.
 The search never leaves PATH.
 
+--global (-g) searches $HOME instead, skipping caches, toolchains and other
+machine-generated trees. Set DEVUP_FF_GLOBAL_ROOT to search somewhere else, or
+add your own rules to ~/.config/fd/ignore.
+
   type          filter the list
   arrows        move through the matches
   Enter         open the highlighted file in nano, or vi if nano is missing
   Esc / Ctrl-C  leave without opening anything
+
+Bound to Ctrl-F (here) and Alt-Shift-F (global) in zsh and bash.
 USAGE
 }
 
@@ -76,14 +84,21 @@ if [[ "${1:-}" == "--preview" ]]; then
   exit 0
 fi
 
+global=0
 case "${1:-}" in
-  -h|--help) usage; exit 0 ;;
-  --)        shift ;;
-  -?*)       die "unknown option '$1' (try: ff --help)" ;;
+  -h|--help)   usage; exit 0 ;;
+  -g|--global) global=1; shift ;;
+  --)          shift ;;
+  -?*)         die "unknown option '$1' (try: ff --help)" ;;
 esac
 
-(( $# <= 1 )) || die "expected at most one PATH, got $#"
-root="${1:-.}"
+if (( global )); then
+  (( $# == 0 )) || die "--global searches ${DEVUP_FF_GLOBAL_ROOT:-\$HOME} and takes no PATH"
+  root="${DEVUP_FF_GLOBAL_ROOT:-$HOME}"
+else
+  (( $# <= 1 )) || die "expected at most one PATH, got $#"
+  root="${1:-.}"
+fi
 
 [[ -e "$root" ]]              || die "no such path: $root"
 [[ -d "$root" ]]              || die "not a directory: $root"
@@ -124,30 +139,54 @@ else
   preview_window='right:55%:wrap'
 fi
 
+# The picker never hides which tree it is looking at: a global search that looks
+# like a project search is how you open the wrong file.
+if (( global )); then
+  prompt_label='global ❯ '
+  scope_label="everything under ${root}"
+else
+  prompt_label='file ❯ '
+  scope_label="$root"
+fi
+
 # fzf runs the preview through a shell, so the path to this script is quoted
 # here. {} is left bare: fzf quotes the filename it substitutes.
 self="$0"
 [[ "$self" != /* ]] && self="$PWD/$self"
 
-# ---------- pick ----------
+# ---------- what to search ----------
 # --follow is deliberately absent: following symlinks would let a search of the
 # current directory wander into $HOME or / through a single link, which is both
 # slow and a surprise.
+fd_args=(--type f --hidden --color never --exclude .git)
+
+# A global search crosses trees a project search never does: package caches,
+# toolchains, browser profiles, editor extensions. On a normal machine those are
+# most of the files and none of the answers — 450k entries against 36k here.
+# They are excluded only in global mode: inside a project you may well want to
+# open something under target/ or node_modules/.
+if (( global )); then
+  for _skip in \
+    node_modules .venv venv __pycache__ target .gradle .m2 \
+    .cache .local/share .local/state .npm .nvm .pnpm-store \
+    .rustup .cargo/registry go/pkg \
+    snap .var .steam .mozilla .thunderbird .vscode/extensions
+  do
+    fd_args+=(--exclude "$_skip")
+  done
+fi
+
+# ---------- pick ----------
 selected="$(
-  "$fd_cmd" \
-    --type f \
-    --hidden \
-    --color never \
-    --exclude .git \
-    . "$root" 2>/dev/null \
+  "$fd_cmd" "${fd_args[@]}" . "$root" 2>/dev/null \
   | fzf \
       --height=80% \
       --min-height=10 \
       --layout=reverse \
       --border \
       --info=inline \
-      --prompt='file ❯ ' \
-      --header="${root}  ·  Enter opens in ${editor_cmd}, Esc cancels" \
+      --prompt="${prompt_label}" \
+      --header="${scope_label}  ·  Enter opens in ${editor_cmd}, Esc cancels" \
       --preview="$(printf '%q' "$self") --preview {}" \
       --preview-window="$preview_window"
 )"
