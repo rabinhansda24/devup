@@ -54,9 +54,16 @@ bash_global_binds() { # <keymap>
   HOME="$SB" PATH="$BIN:$PATH" bash -i -c "bind -m $1 -X" 2>/dev/null \
     | grep -c '_devup_global_finder_widget' || true
 }
-assert_eq "bash binds Alt-Shift-F once in emacs"      1 "$(bash_global_binds emacs-standard)"
-assert_eq "bash binds Alt-Shift-F once in vi-insert"  1 "$(bash_global_binds vi-insert)"
-assert_eq "bash binds Alt-Shift-F once in vi-command" 1 "$(bash_global_binds vi-command)"
+# Two sequences reach the same widget: ESC F, and the kitty-protocol CSI 102;6u
+# that a terminal sends for Ctrl-Shift-F when it can.
+assert_eq "bash binds both global keys in emacs"      2 "$(bash_global_binds emacs-standard)"
+assert_eq "bash binds both global keys in vi-insert"  2 "$(bash_global_binds vi-insert)"
+assert_eq "bash binds both global keys in vi-command" 2 "$(bash_global_binds vi-command)"
+
+bash_csi_u() {
+  HOME="$SB" PATH="$BIN:$PATH" bash -i -c 'bind -m emacs-standard -X' 2>/dev/null | grep -c '102;6u' || true
+}
+assert_eq "bash binds the Ctrl-Shift-F sequence once" 1 "$(bash_csi_u)"
 
 # The two keys must stay distinct: one searches here, the other searches $HOME.
 local_target="$(HOME="$SB" PATH="$BIN:$PATH" bash -i -c 'bind -m emacs-standard -X' 2>/dev/null | grep '\\C-f')"
@@ -77,6 +84,9 @@ if command -v zsh >/dev/null 2>&1; then
   assert_contains "zsh binds Alt-Shift-F in emacs" "$(zsh_global emacs)" "_devup_global_finder_widget"
   assert_contains "zsh binds Alt-Shift-F in viins" "$(zsh_global viins)" "_devup_global_finder_widget"
   assert_contains "zsh binds Alt-Shift-F in vicmd" "$(zsh_global vicmd)" "_devup_global_finder_widget"
+  assert_contains "zsh binds the Ctrl-Shift-F sequence" \
+    "$(HOME="$SB" PATH="$BIN:$PATH" zsh -i -c "bindkey -M emacs '^[[102;6u'" 2>/dev/null)" \
+    "_devup_global_finder_widget"
   assert_not_contains "zsh Ctrl-F is not the global finder" "$(zsh_widget emacs)" "_devup_global_finder_widget"
 fi
 

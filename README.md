@@ -103,7 +103,8 @@ ff                  the same thing, typed
 ff PATH             search PATH instead
 ff "path with spaces"
 
-Alt-Shift-F         search everything under $HOME
+Ctrl-Shift-F        search everything under $HOME
+Alt-Shift-F         the same, in terminals that cannot send Ctrl-Shift-F
 ff --global         the same thing, typed  (ff -g works too)
 ```
 
@@ -227,12 +228,16 @@ for the same reason: one link is otherwise enough to turn a search of a project
 into a walk through `/`. Alt-Shift-F is there when you do want the whole of
 `$HOME`, and says so on screen.
 
-**The global search is Alt-Shift-F, not Ctrl-Shift-F.** A terminal sends the
-same `0x06` for Ctrl-F and Ctrl-Shift-F — control characters have no shift bit —
-so the obvious key would need the kitty keyboard protocol or a per-terminal
-mapping, and WezTerm swallows Ctrl-Shift-F for its own scrollback search anyway.
-Alt-Shift-F arrives as `ESC F` everywhere with no configuration, and the only
-thing it displaces is a duplicate of Alt-f, which still works.
+**The global search answers to two keys.** A terminal sends the same `0x06` for
+Ctrl-F and Ctrl-Shift-F — control characters have no shift bit — so Ctrl-Shift-F
+only arrives if the terminal encodes it, which means the kitty keyboard protocol
+(`CSI 102;6u`). kitty, ghostty and foot do that natively, and devup's WezTerm
+config maps the key to send it; WezTerm's own Ctrl-Shift-F is replaced, but
+`LEADER f` was already the same scrollback search, so nothing is lost. Somewhere
+that cannot manage any of that, Alt-Shift-F does the same job: it is `ESC F`
+everywhere with no configuration, and displaces only a duplicate of Alt-f, which
+still works. Both keys run the same finder, so it does not matter which one your
+terminal gives you.
 
 **Generated files carry a marker.** `~/.local/bin/ff` starts with a
 `devup-managed:` line, and devup compares it against the copy in `configs/`

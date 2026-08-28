@@ -38,7 +38,7 @@ add your own rules to ~/.config/fd/ignore.
   Enter         open the highlighted file in nano, or vi if nano is missing
   Esc / Ctrl-C  leave without opening anything
 
-Bound to Ctrl-F (here) and Alt-Shift-F (global) in zsh and bash.
+Bound to Ctrl-F (here) and Ctrl-Shift-F / Alt-Shift-F (global) in zsh and bash.
 USAGE
 }
 

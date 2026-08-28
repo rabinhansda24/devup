@@ -4,13 +4,13 @@
 register_pkg \
   --id file-finder \
   --name "file finder" \
-  --desc "Ctrl-F here, Alt-Shift-F over \$HOME — fuzzy file search with preview" \
+  --desc "Ctrl-F here, Ctrl-Shift-F over \$HOME — fuzzy file search with preview" \
   --group cli \
   --check "test -x \"\$HOME/.local/bin/ff\" && cmp -s \"\$DEVUP_ROOT/configs/ff\" \"\$HOME/.local/bin/ff\"" \
   --install "_install_file_finder" \
   --config "_configure_file_finder" \
   --manual "Install fd, fzf and bat, then: install -m 0755 configs/ff ~/.local/bin/ff, and bind Ctrl-F in your shell" \
-  --note "Ctrl-F finds files in the current directory, Alt-Shift-F searches all of \$HOME. Also: ff PATH, ff --global." \
+  --note "Ctrl-F searches the current directory; Ctrl-Shift-F (or Alt-Shift-F) searches all of \$HOME. Also: ff PATH, ff --global." \
   --needs "fd fzf bat" \
   --default yes
 
@@ -34,11 +34,14 @@ _configure_file_finder() {
   zsh_block="$(cat <<'ZSH'
 # Ctrl-F normally means forward-char in Zsh/readline. devup intentionally
 # repurposes it as the familiar Find shortcut; Right Arrow still moves forward.
-# Alt-Shift-F is the same finder over $HOME. It is used rather than Ctrl-Shift-F
-# because a terminal cannot tell Ctrl-Shift-F from Ctrl-F — control characters
-# carry no shift bit — so that would need per-terminal configuration, while
-# Alt-Shift-F arrives as ESC F everywhere and only displaces a duplicate of
-# Alt-f (forward-word), which Alt-f itself still does.
+# Alt-Shift-F and Ctrl-Shift-F both run the same finder over $HOME.
+#
+# Two keys because a terminal cannot tell Ctrl-Shift-F from Ctrl-F on its own —
+# control characters carry no shift bit — so it only arrives if the terminal
+# sends the kitty keyboard protocol's CSI 102;6u for it. kitty, ghostty and foot
+# do natively; devup's WezTerm config is set up to. Alt-Shift-F needs no such
+# help: it is ESC F in every terminal, and only displaces a duplicate of Alt-f
+# (forward-word), which Alt-f itself still does.
 if [[ -o interactive ]]; then
   _devup_ff_run() {
     if ! command -v ff >/dev/null 2>&1; then
@@ -65,6 +68,9 @@ if [[ -o interactive ]]; then
   bindkey -M emacs '^[F' _devup_global_finder_widget
   bindkey -M viins '^[F' _devup_global_finder_widget
   bindkey -M vicmd '^[F' _devup_global_finder_widget
+  bindkey -M emacs '^[[102;6u' _devup_global_finder_widget
+  bindkey -M viins '^[[102;6u' _devup_global_finder_widget
+  bindkey -M vicmd '^[[102;6u' _devup_global_finder_widget
 fi
 ZSH
 )"
@@ -72,10 +78,13 @@ ZSH
   bash_block="$(cat <<'BASH'
 # Ctrl-F normally means forward-char in Bash/readline. devup intentionally
 # repurposes it as the familiar Find shortcut; Right Arrow still moves forward.
-# Alt-Shift-F is the same finder over $HOME. It is used rather than Ctrl-Shift-F
-# because a terminal cannot tell Ctrl-Shift-F from Ctrl-F — control characters
-# carry no shift bit — so that would need per-terminal configuration, while
-# Alt-Shift-F arrives as ESC F everywhere and readline only has it aliased to
+# Alt-Shift-F and Ctrl-Shift-F both run the same finder over $HOME.
+#
+# Two keys because a terminal cannot tell Ctrl-Shift-F from Ctrl-F on its own —
+# control characters carry no shift bit — so it only arrives if the terminal
+# sends the kitty keyboard protocol's CSI 102;6u for it. kitty, ghostty and foot
+# do natively; devup's WezTerm config is set up to. Alt-Shift-F needs no such
+# help: it is ESC F in every terminal, and readline only has it aliased to
 # Alt-f (do-lowercase-version), which Alt-f itself still does.
 # bind only works in an interactive shell, and plenty of tooling sources
 # .bashrc from a non-interactive one, where it would otherwise warn.
@@ -98,11 +107,14 @@ if [[ $- == *i* ]]; then
   bind -m emacs-standard -x '"\eF": _devup_global_finder_widget'
   bind -m vi-insert      -x '"\eF": _devup_global_finder_widget'
   bind -m vi-command     -x '"\eF": _devup_global_finder_widget'
+  bind -m emacs-standard -x '"\e[102;6u": _devup_global_finder_widget'
+  bind -m vi-insert      -x '"\e[102;6u": _devup_global_finder_widget'
+  bind -m vi-command     -x '"\e[102;6u": _devup_global_finder_widget'
 fi
 BASH
 )"
 
   write_block "$HOME/.zshrc" "file-finder" "$zsh_block"
   write_block "$HOME/.bashrc" "file-finder" "$bash_block"
-  success "Bound Ctrl-F (here) and Alt-Shift-F (global) to the file finder in zsh and bash"
+  success "Bound Ctrl-F (here) and Ctrl-Shift-F / Alt-Shift-F (global) to the file finder in zsh and bash"
 }
