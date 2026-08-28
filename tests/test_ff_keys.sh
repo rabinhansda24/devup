@@ -31,13 +31,25 @@ PATH="$BIN:$PATH" devup_sh "$SB" '_configure_file_finder' >/dev/null 2>&1
 printf "\nPROMPT='DEVUPREADY '\n" >>"$SB/.zshrc"
 printf "\nPS1='DEVUPREADY '\n"    >>"$SB/.bashrc"
 
+# zsh runs with -d: read $HOME/.zshrc, skip /etc/zsh/*. What is under test is
+# the block devup writes into the user's rc file, not the machine's global zsh
+# config — and on some hosts (GitHub's runner image among them) that global
+# config runs compinit, which stops on "insecure directories ... [y/n]?" and
+# never reaches a prompt. bash needs no equivalent.
+shell_cmd() { # <shell> -> how to start it interactively
+  case "$1" in
+    zsh) printf 'zsh -d -i' ;;
+    *)   printf '%s -i' "$1" ;;
+  esac
+}
+
 LAST_PTY_OUTPUT=""
 
 press() { # <shell> <escaped key> -> prints what ff was called with
   rm -f "$SB/fired.log"
   LAST_PTY_OUTPUT="$(
     HOME="$SB" PATH="$BIN:/usr/bin:/bin" \
-      python3 "$TESTS_DIR/keydrive.py" "cd '$SB' && exec $1 -i" \
+      python3 "$TESTS_DIR/keydrive.py" "cd '$SB' && exec $(shell_cmd "$1")" \
         'EXPECT:DEVUPREADY' "SEND:$2" 'EXPECT:FFDONE' 2>&1
   )"
   # Only the first line matters; a stray keystroke would show up as a second.
@@ -68,7 +80,7 @@ probe_shell() { # <shell>
     "$(grep -c 'devup:file-finder' "$SB/.${1}rc" 2>/dev/null || echo 0)"
   local out
   out="$(HOME="$SB" PATH="$BIN:/usr/bin:/bin" python3 "$TESTS_DIR/keydrive.py" \
-          "exec $1 -i" 'EXPECT:DEVUPREADY' 2>&1 | tr -d '\000' | tr '\r\n' '  ' | tr -s ' ')"
+          "exec $(shell_cmd "$1")" 'EXPECT:DEVUPREADY' 2>&1 | tr -d '\000' | tr '\r\n' '  ' | tr -s ' ')"
   printf '    -- %s saw: [%s]\n' "$1" "$(printf '%s' "$out" | tail -c 200)"
 }
 
