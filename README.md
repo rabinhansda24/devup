@@ -150,7 +150,8 @@ which you need or prompt glyphs render as boxes.
 
 The shipped `~/.wezterm.lua` opens at 112x24 — WezTerm's default width plus 40%,
 because 80 columns is tight for a diff or the file finder's side-by-side preview
-— at 90% opacity, with a tmux-style leader on Ctrl-Shift-A. Delete the
+— at 90% opacity, with a blinking block cursor and a tmux-style leader on
+Ctrl-Shift-A. Delete the
 `devup:wezterm` marker line at the top of the file to take ownership of it, and
 devup will stop updating it.
 </details>
