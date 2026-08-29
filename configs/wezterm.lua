@@ -17,6 +17,16 @@ config.font = wezterm.font_with_fallback {
 config.font_size = 11.5
 config.line_height = 1.1
 
+-- A blinking cursor, because a steady block is easy to lose on a busy screen.
+-- WezTerm's default is SteadyBlock, and its default easing fades the cursor in
+-- and out rather than blinking it; 'Constant' at both ends gives a plain on/off
+-- blink instead of a pulse. Blinking pauses while the window is unfocused, which
+-- is WezTerm's behaviour and the right one.
+config.default_cursor_style = 'BlinkingBlock'
+config.cursor_blink_rate = 500
+config.cursor_blink_ease_in = 'Constant'
+config.cursor_blink_ease_out = 'Constant'
+
 -- WezTerm launches at 80x24 unless told otherwise, which is narrow for a diff
 -- or a side-by-side preview. 112 columns is that default plus 40%. Rows are left
 -- at the default; only the width was too tight.
