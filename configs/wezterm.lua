@@ -17,6 +17,20 @@ config.font = wezterm.font_with_fallback {
 config.font_size = 11.5
 config.line_height = 1.1
 
+-- WezTerm launches at 80x24 unless told otherwise, which is narrow for a diff
+-- or a side-by-side preview. 112 columns is that default plus 40%. Rows are left
+-- at the default; only the width was too tight.
+config.initial_cols = 112
+
+-- 90% opaque, so the desktop shows through just enough to see what is behind
+-- the window without making the text fight the wallpaper. This needs a
+-- compositing window manager; without one the window simply renders opaque.
+config.window_background_opacity = 0.9
+
+-- Text cells stay fully opaque, so readability does not depend on what happens
+-- to be behind the window.
+config.text_background_opacity = 1.0
+
 config.window_padding = { left = 8, right = 8, top = 8, bottom = 0 }
 
 -- Keep the window's own title bar, so minimise / maximise / close are there.
